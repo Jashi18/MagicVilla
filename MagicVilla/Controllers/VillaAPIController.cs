@@ -1,4 +1,5 @@
-﻿using MagicVilla.Models;
+﻿using MagicVilla.Data;
+using MagicVilla.Models;
 using MagicVilla.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,16 +7,30 @@ namespace MagicVilla.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class VillaAPIController : ControllerBase
+    public class VillaApiController : ControllerBase
     {
         [HttpGet]
-        public IEnumerable<VillaDTO> GetVillas()
+        public ActionResult<IEnumerable<VillaDto>> GetVillas()
         {
-            return new List<VillaDTO>()
+            return Ok(VillaStore.VillaList);
+        }
+
+        [HttpGet("{id:int}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public ActionResult<VillaDto> GetVilla(int id )
+        {
+            if (id == 0)
             {
-                new VillaDTO() {Id = 1, Name ="Beach View"},
-                new VillaDTO() {Id = 2,Name = "Pool View"}
-            };
+                return BadRequest();
+            }
+            var villa = VillaStore.VillaList.Find(u => u.Id == id);
+            if (villa == null)
+            {
+                return NotFound();
+            }
+             return Ok(villa);
         }
     }
 }
