@@ -1,6 +1,7 @@
 ﻿using MagicVilla.Data;
 using MagicVilla.Models;
 using MagicVilla.Models.Dto;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MagicVilla.Controllers
@@ -9,9 +10,16 @@ namespace MagicVilla.Controllers
     [ApiController]
     public class VillaApiController : ControllerBase
     {
+        private readonly ILogger<VillaApiController> _logger;
+
+        public VillaApiController(ILogger<VillaApiController> logger)
+        {
+            _logger = logger;
+        }
         [HttpGet]
         public ActionResult<IEnumerable<VillaDto>> GetVillas()
         {
+            _logger.LogInformation("Getting All Villas");
             return Ok(VillaStore.VillaList);
         }
 
@@ -23,6 +31,7 @@ namespace MagicVilla.Controllers
         {
             if (id == 0)
             {
+                _logger.LogInformation("Getting ERROR while Logging" + id);
                 return BadRequest();
             }
             var villa = VillaStore.VillaList.Find(u => u.Id == id);
@@ -85,6 +94,31 @@ namespace MagicVilla.Controllers
             villa.Name = villaDto.Name;
             villa.Occupancy = villaDto.Occupancy;
             villa.Sqft = villaDto.Sqft;
+            return NoContent();
+        }
+
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [HttpPatch("{id:int}", Name = "UpdatePartialVilla")]
+        public IActionResult UpdatePartialVilla (int id, JsonPatchDocument<VillaDto> patchDto)
+        {
+            if (patchDto == null || id == 0)
+            {
+                return BadRequest();
+            }
+
+            var villa = VillaStore.VillaList.Find(u => u.Id == id);
+            if (villa == null)
+            {
+                return BadRequest();
+            }
+
+            patchDto.ApplyTo(villa, ModelState);
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             return NoContent();
         }
     }
